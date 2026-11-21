@@ -455,7 +455,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="6">Page version 6</span>
+    <span id="pageVersion" data-page-version="7">Page version 7</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -466,7 +466,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 6;
+const PAGE_VERSION = 7;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";
@@ -576,6 +576,8 @@ function remember(entry) {
 }
 
 // ---- board types -------------------------------------------------------------
+// "untested" boards can be installed, with an extra warning first.
+function installable(b) { return !!b && (b.status === "ready" || b.status === "untested") && !!b.firmware; }
 function selectedBoard() { return boards.find((b) => b.id === $("board").value); }
 
 function fillBoardSelect() {
@@ -584,7 +586,7 @@ function fillBoardSelect() {
   for (const b of boards) {
     const o = document.createElement("option");
     o.value = b.id;
-    o.textContent = b.name + (b.status === "ready" ? "" : b.status === "planned" ? t("board.suffixPlanned") : t("board.suffixNotSupported"));
+    o.textContent = b.name + ({ ready: "", untested: t("board.suffixUntested"), planned: t("board.suffixPlanned") }[b.status] ?? t("board.suffixNotSupported"));
     sel.appendChild(o);
   }
   if (keep) sel.value = keep;
@@ -594,8 +596,10 @@ function fillBoardSelect() {
 function updateBoardNote() {
   const b = selectedBoard();
   if (!b) return;
-  const ready = b.status === "ready";
-  const state = ready ? t("board.ready", { version: b.firmware.version }) : b.status === "planned" ? t("board.planned") : t("board.notSupported");
+  const ready = installable(b);
+  const state = b.status === "ready" ? t("board.ready", { version: b.firmware.version })
+    : b.status === "untested" ? t("board.untested", { version: b.firmware.version })
+    : b.status === "planned" ? t("board.planned") : t("board.notSupported");
   $("boardNote").textContent = `${state} ${b.notes || ""}`;
   $("chipText").textContent = (b.chip || "").replace(/^ESP32-/, "");
   $("install").disabled = busy || !ready || !("serial" in navigator);
@@ -745,8 +749,9 @@ function failRun(e) {
 // ---- actions -----------------------------------------------------------------
 async function install() {
   const board = selectedBoard();
-  if (!board || board.status !== "ready") return;
-  if (!confirm(t("confirm.install", { version: board.firmware.version, name: board.name }))) return;
+  if (!installable(board)) return;
+  if (!confirm(t("confirm.install", { version: board.firmware.version, name: board.name }) +
+    (board.status === "untested" ? "\n\n" + t("confirm.untested") : ""))) return;
 
   setBusy(true);
   startRun();

@@ -31,7 +31,9 @@ Firmware updates for boards that are already installed come from the Home Assist
    and `sha256`. Get the last two with `sha256sum` and `stat -c %s` (Linux) or
    `Get-FileHash` and `(Get-Item file).Length` (PowerShell).
 3. `chip` must match what esptool-js reports, for example `ESP32-C6`.
-4. Set `status` to `ready` only after the board has been set up with the page once. Otherwise leave it `planned`.
+4. `status`: `ready` (tested), `untested` (built but not yet tried on the real board: installable, with a warning),
+   `planned` (no firmware yet) or `not-supported` (this page can't install it). Change `untested` to `ready`
+   only after the board has been set up with the page once.
 
 Every different hardware type needs its own firmware build and its own Matter product ID, so Home Assistant
 never offers a board the wrong update.
