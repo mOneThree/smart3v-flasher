@@ -1,0 +1,87 @@
+{
+  "title": "Smart 3V board setup",
+  "lead": "Install Smart 3V on a new board over USB and get its pairing code. After that, updates arrive through Home Assistant.",
+
+  "ui.look": "Look",
+  "skin.workbench": "Workbench",
+  "skin.friendly": "Friendly",
+  "skin.minimal": "Minimal",
+  "mode.toDark": "Use dark mode",
+  "mode.toLight": "Use light mode",
+  "ui.language": "Language",
+
+  "unsupported": "This browser can't talk to USB devices. Open this page in Chrome or Edge on a computer.",
+
+  "steps.label": "Setup progress",
+  "steps.choose": "Choose board",
+  "steps.connect": "Connect",
+  "steps.install": "Install",
+  "steps.code": "Pairing code",
+
+  "choose.label": "Which board is this?",
+  "board.ready": "Firmware {version}.",
+  "board.planned": "Not available yet.",
+  "board.notSupported": "Can't be set up from this page.",
+  "board.suffixPlanned": " (planned)",
+  "board.suffixNotSupported": " (not supported)",
+
+  "connect.title": "Plug it in",
+  "connect.cable": "Connect the board to this computer with a USB cable that carries data, not a charge-only cable. Close any other program that is talking to it.",
+  "connect.boot": "Won't connect? Unplug it, hold the BOOT button, plug it back in, then let go.",
+  "erase.warning": "Installing erases the board. A board that was already paired loses that pairing and gets a new code.",
+
+  "btn.install": "Install Smart 3V",
+  "btn.read": "Read pairing code",
+  "btn.copy": "Copy code",
+  "btn.copied": "Copied",
+  "btn.csv": "Download list (CSV)",
+  "btn.print": "Print labels",
+  "btn.remove": "Remove",
+
+  "log.summary": "Technical log",
+  "bench.label": "Board status",
+
+  "status.idle": "Plug in the board, then click Install Smart 3V.",
+  "status.notReady": "Choose a board that can be set up here.",
+  "status.download": "Downloading the firmware…",
+  "status.pickPort": "Choose the board in the browser's pop-up.",
+  "status.connecting": "Connecting to the board…",
+  "status.writing": "Erasing and writing. Keep the board plugged in.",
+  "status.restart": "Restarting the board…",
+  "status.waitCode": "Waiting for the board to show its pairing code (up to a minute)…",
+  "status.reading": "Listening to the board (up to 80 seconds). An unpaired board repeats its code every 30 seconds.",
+  "status.done": "Done. Board {id} is ready to add to Home Assistant.",
+  "status.paired": "This board is already paired, so it doesn't show its pairing code. Nothing was changed.",
+  "status.noCode": "The board didn't show a pairing code in time. Unplug it, plug it back in, then click Read pairing code.",
+  "status.portChanged": "Installed. The board's connection changed after the restart: click Read pairing code and choose the board again.",
+  "status.noPort": "No board was chosen.",
+  "status.failed": "Didn't work: {msg}",
+  "status.boardsFailed": "Couldn't load the list of board types. Reload the page.",
+
+  "err.download": "Couldn't download the firmware ({code}).",
+  "err.checksum": "The downloaded firmware doesn't match its checksum. Nothing was written.",
+  "err.chip": "This board has an {chip} chip, but {name} needs an {need}. Nothing was written.",
+  "err.noReturn": "the board didn't come back after the restart",
+
+  "confirm.install": "Erase the connected board and install Smart 3V {version} for {name}?",
+  "confirm.remove": "Remove board {id} from this list?",
+
+  "result.title": "Board {id} is ready",
+  "result.how": "In Home Assistant, choose Add Matter device, then scan this QR code or type the number. It's saved in your list below.",
+  "result.howNoQr": "In Home Assistant, choose Add Matter device, then type this number. It's saved in your list below.",
+
+  "list.title": "Your boards",
+  "list.note": "This list is saved only in this browser. Download a copy to keep it safe, and treat pairing codes like keys.",
+  "list.empty": "No boards yet. Boards you set up here appear in this list.",
+  "col.id": "Board ID",
+  "col.code": "Pairing code",
+  "col.firmware": "Firmware",
+  "col.type": "Board type",
+  "col.date": "Set up",
+
+  "label.scan": "Matter: scan the code or type the number.",
+  "label.type": "Matter pairing code. Type it in Home Assistant.",
+
+  "footer.version": "Page version {n}",
+  "footer.source": "Source on GitHub"
+}

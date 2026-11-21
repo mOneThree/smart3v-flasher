@@ -1,144 +1,520 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr" data-skin="workbench" data-mode="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smart 3V board setup</title>
+<meta name="color-scheme" content="light dark">
+<script>
+  // Apply the saved look before the page paints, so it never flashes the wrong theme.
+  (function () {
+    var d = document.documentElement, u = {};
+    try { u = JSON.parse(localStorage.getItem("smart3v.ui.v1")) || {}; } catch (e) {}
+    var skins = ["workbench", "friendly", "minimal"];
+    d.dataset.skin = skins.indexOf(u.skin) >= 0 ? u.skin : "workbench";
+    d.dataset.mode = u.mode === "dark" || u.mode === "light" ? u.mode
+      : (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  })();
+</script>
 <style>
-  :root {
-    --ink: #10222a; --muted: #5b6f77; --line: #d5e0e4; --bg: #f3f7f8; --card: #ffffff;
-    --teal: #16566a; --teal-dark: #103a4a; --amber: #b7791f; --red: #b3261e; --green: #1f7a4d;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --ink: #e6eef0; --muted: #9db0b7; --line: #2b3d45; --bg: #0f1a1f; --card: #16252c;
-            --teal: #3fa0b8; --teal-dark: #7cc4d6; --amber: #e0a94a; --red: #f08b84; --green: #5fc795; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); }
-  main { max-width: 820px; margin: 0 auto; padding: 28px 18px 60px; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; color: var(--teal-dark); }
-  h2 { font-size: 1.1rem; margin: 0 0 10px; }
-  p { margin: 0 0 10px; }
-  .lead { color: var(--muted); margin-bottom: 20px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-  .step { display: flex; gap: 12px; align-items: baseline; }
-  .num { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--teal); color: #fff; font-weight: 600; font-size: .9rem; display: grid; place-items: center; }
-  select, button { font: inherit; }
-  select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
-  button { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--teal); background: var(--teal); color: #fff; cursor: pointer; font-weight: 600; }
-  button.secondary { background: transparent; color: var(--teal); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
-  .note { color: var(--muted); font-size: .92rem; }
-  .warn { color: var(--amber); }
-  .err { color: var(--red); font-weight: 600; }
-  .ok { color: var(--green); font-weight: 600; }
-  progress { width: 100%; height: 14px; margin-top: 10px; }
-  #log { background: #0c1418; color: #cfe3e8; font: 12.5px/1.45 ui-monospace, Consolas, monospace; padding: 10px 12px; border-radius: 8px; height: 190px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin-top: 10px; }
-  .result { border: 2px solid var(--green); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
-  .code { font: 600 1.5rem ui-monospace, Consolas, monospace; letter-spacing: .06em; }
-  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 600; }
-  td.mono { font-family: ui-monospace, Consolas, monospace; }
-  td button { padding: 3px 9px; font-weight: 500; }
-  #unsupported { display: none; }
-  .result .qr { background: #fff; width: 150px; padding: 6px; border-radius: 6px; margin-top: 10px; }
-  .qr svg { display: block; width: 100%; height: auto; }
-  .labels { display: none; }
-  @media print {
-    body { background: #fff; color: #000; }
-    main > *:not(.labels) { display: none !important; }
-    .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; }
-    .label { border: 1px solid #000; border-radius: 3mm; padding: 4mm; break-inside: avoid; display: flex; gap: 3mm; align-items: center; }
-    .label .qr { width: 22mm; flex: none; }
-    .label b { display: block; font-size: 11pt; }
-    .label span { display: block; font: 600 13pt ui-monospace, Consolas, monospace; margin-top: 1mm; }
-    .label small { display: block; font-size: 8pt; margin-top: 1mm; }
-  }
+/* =============================================================================
+   Tokens. Every look (skin) sets the same variables for light and dark mode.
+   ============================================================================= */
+:root {
+  --mono: "Cascadia Mono", "SF Mono", ui-monospace, Consolas, "Liberation Mono", monospace;
+}
+
+/* --- Workbench: solder mask green, copper pads, silkscreen white ----------- */
+[data-skin="workbench"] {
+  --font: "Bahnschrift", "DIN Alternate", "Barlow", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font-head: var(--font);
+  --head-weight: 600; --head-stretch: normal; --head-track: .01em;
+  --radius: 6px; --radius-sm: 3px; --radius-btn: 3px;
+  --panel-border: 1px solid var(--line); --shadow: none;
+  --pad-shape: 50%;
+}
+[data-skin="workbench"][data-mode="light"] {
+  --bg: #e6ece6; --panel: #f6f8f5; --ink: #11241a; --muted: #536558; --line: #c3cfc5;
+  --accent: #9c5719; --accent-ink: #fffaf3; --accent-soft: #f1e2d2;
+  --ok: #1b7340; --warn: #8f5a00; --err: #b42318;
+  --pcb: #1e5a3d; --pcb-edge: #123d28; --silk: #e8f0ea; --copper: #c58a45; --chip: #20262a; --led-off: #3a4a40;
+  --pattern: radial-gradient(circle, #c9d4cb 1.2px, transparent 1.6px) 0 0 / 22px 22px;
+  --log-bg: #11241a; --log-ink: #cfe0d3;
+}
+[data-skin="workbench"][data-mode="dark"] {
+  --bg: #0d1a13; --panel: #132419; --ink: #e2ebe4; --muted: #8fa496; --line: #26402f;
+  --accent: #d99246; --accent-ink: #1b1104; --accent-soft: #3a2a17;
+  --ok: #5fcb8b; --warn: #e5b45a; --err: #f2877e;
+  --pcb: #1e5a3d; --pcb-edge: #0b2a1b; --silk: #e8f0ea; --copper: #d8a05a; --chip: #151a1d; --led-off: #2c3a31;
+  --pattern: radial-gradient(circle, #1b3125 1.2px, transparent 1.6px) 0 0 / 22px 22px;
+  --log-bg: #08120c; --log-ink: #bcd3c2;
+}
+
+/* --- Friendly: soft, rounded, like a smart-home app's setup screen ---------- */
+[data-skin="friendly"] {
+  --font: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-head: var(--font);
+  --head-weight: 700; --head-stretch: normal; --head-track: -.01em;
+  --radius: 22px; --radius-sm: 14px; --radius-btn: 999px;
+  --panel-border: 1px solid transparent;
+  --pad-shape: 50%;
+}
+[data-skin="friendly"][data-mode="light"] {
+  --bg: #edf1f7; --panel: #ffffff; --ink: #1c2538; --muted: #5d6880; --line: #dde3ee;
+  --accent: #3b52c4; --accent-ink: #ffffff; --accent-soft: #e5e9fb;
+  --ok: #1d8250; --warn: #a15c00; --err: #c02a1f;
+  --pcb: #3d7c63; --pcb-edge: #2d5e4a; --silk: #f2f7f4; --copper: #e3b96f; --chip: #2a3142; --led-off: #c6cfdc;
+  --pattern: none; --shadow: 0 10px 30px -12px rgba(40, 56, 110, .22);
+  --log-bg: #1c2538; --log-ink: #d7deee;
+}
+[data-skin="friendly"][data-mode="dark"] {
+  --bg: #121729; --panel: #1b2238; --ink: #e8ecf7; --muted: #9ba6c0; --line: #2b3452;
+  --accent: #93a4ff; --accent-ink: #10152b; --accent-soft: #263058;
+  --ok: #63d29a; --warn: #f0b85e; --err: #ff8f86;
+  --pcb: #3d7c63; --pcb-edge: #2a5544; --silk: #eef5f1; --copper: #e3b96f; --chip: #10141f; --led-off: #3a4463;
+  --pattern: none; --shadow: 0 12px 30px -14px rgba(0, 0, 0, .6);
+  --log-bg: #0c1020; --log-ink: #c6cee6;
+}
+
+/* --- Minimal: line drawing, hairlines, one quiet colour ------------------- */
+[data-skin="minimal"] {
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-head: var(--font);
+  --head-weight: 600; --head-stretch: normal; --head-track: -.015em;
+  --radius: 0; --radius-sm: 4px; --radius-btn: 4px;
+  --panel-border: 0; --shadow: none;
+  --pad-shape: 50%;
+}
+[data-skin="minimal"][data-mode="light"] {
+  --bg: #ffffff; --panel: #ffffff; --ink: #1d2124; --muted: #687075; --line: #e0e3e5;
+  --accent: #17596a; --accent-ink: #ffffff; --accent-soft: #e6f0f2;
+  --ok: #1d7448; --warn: #8a5a00; --err: #b3261e;
+  --pcb: transparent; --pcb-edge: #1d2124; --silk: #1d2124; --copper: #1d2124; --chip: transparent; --led-off: #ffffff;
+  --pattern: none;
+  --log-bg: #f4f6f7; --log-ink: #2b3236;
+}
+[data-skin="minimal"][data-mode="dark"] {
+  --bg: #181a1c; --panel: #181a1c; --ink: #e6e8e9; --muted: #9aa1a6; --line: #2e3235;
+  --accent: #6db7c9; --accent-ink: #0d1c20; --accent-soft: #1d2d31;
+  --ok: #67c995; --warn: #e3b35a; --err: #f28b84;
+  --pcb: transparent; --pcb-edge: #e6e8e9; --silk: #e6e8e9; --copper: #e6e8e9; --chip: transparent; --led-off: #181a1c;
+  --pattern: none;
+  --log-bg: #111315; --log-ink: #c9ced1;
+}
+
+/* =============================================================================
+   Layout and components (shared by all looks)
+   ============================================================================= */
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; color: var(--ink); background: var(--bg) var(--pattern);
+  font: 16px/1.55 var(--font); -webkit-font-smoothing: antialiased;
+  transition: background-color .2s, color .2s;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+h1, h2, h3 { font-family: var(--font-head); font-weight: var(--head-weight); letter-spacing: var(--head-track); line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.3rem); }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+.brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.mark { flex: none; width: 46px; height: 46px; }
+.lead { color: var(--muted); margin-top: 6px; max-width: 62ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius-btn); padding: 3px; background: var(--panel); gap: 2px; }
+.seg legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span { display: block; padding: 5px 12px; border-radius: calc(var(--radius-btn) - 2px); font-size: .9rem; color: var(--muted); }
+.seg input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.seg input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius-btn); cursor: pointer; color: var(--ink); }
+.icon-btn svg { width: 18px; height: 18px; }
+/* The icon shows the mode the button switches to. */
+[data-mode="dark"] .icon-btn .moon, [data-mode="light"] .icon-btn .sun { display: none; }
+.lang select { border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius-btn); padding: 7px 10px; }
+.lang[hidden] { display: none; }
+
+/* Panels */
+.panel { background: var(--panel); border: var(--panel-border); border-radius: var(--radius); box-shadow: var(--shadow); }
+[data-skin="minimal"] .panel { border-top: 1px solid var(--line); border-radius: 0; }
+.notice { padding: 14px 18px; margin-bottom: 18px; border-left: 4px solid var(--err); color: var(--err); font-weight: 600; }
+.notice[hidden] { display: none; }
+
+/* Stepper: a real sequence, so it is numbered */
+.stepper { list-style: none; margin: 0; padding: 18px 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; border-bottom: 1px solid var(--line); counter-reset: s; }
+.stepper li { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .95rem; position: relative; min-width: 0; }
+.stepper li:not(:last-child)::after { content: ""; flex: 1; height: 2px; background: var(--line); margin-inline: 4px 6px; min-width: 12px; }
+.stepper .pad { flex: none; width: 30px; height: 30px; border-radius: var(--pad-shape); display: grid; place-items: center; font: 600 .9rem var(--font); border: 2px solid var(--line); background: var(--panel); color: var(--muted); }
+.stepper .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stepper li.done { color: var(--ink); }
+.stepper li.done .pad { background: var(--ok); border-color: var(--ok); color: var(--panel); }
+.stepper li.done::after { background: var(--ok); }
+.stepper li.active { color: var(--ink); font-weight: 600; }
+.stepper li.active .pad { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.stepper li.failed .pad { border-color: var(--err); color: var(--err); }
+/* Workbench: the step markers are copper test pads */
+[data-skin="workbench"] .stepper .pad { border: 3px solid var(--copper); background: var(--bg); color: var(--ink); }
+[data-skin="workbench"] .stepper li.done .pad { background: var(--copper); border-color: var(--copper); color: #1b1104; }
+[data-skin="workbench"] .stepper li.active .pad { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+/* Setup area */
+.setup { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
+.steps { padding: 22px; display: grid; gap: 20px; align-content: start; }
+.bench { padding: 22px; border-inline-start: 1px solid var(--line); display: grid; gap: 14px; align-content: start; }
+.field label { display: block; font-weight: 600; margin-bottom: 6px; }
+.field select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); }
+.hint { color: var(--muted); font-size: .93rem; margin-top: 6px; }
+.howto { display: grid; gap: 8px; }
+.howto p { max-width: 62ch; }
+.caution { display: flex; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--ink); font-size: .95rem; }
+.caution svg { flex: none; width: 20px; height: 20px; color: var(--warn); margin-top: 2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { padding: 11px 18px; border-radius: var(--radius-btn); border: 2px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+.btn.quiet { background: transparent; color: var(--accent); }
+.btn.small { padding: 4px 10px; font-size: .88rem; border-width: 1px; font-weight: 500; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+[data-skin="friendly"] .btn:not(.small) { padding: 12px 22px; }
+
+/* The board drawing */
+.board-wrap { display: grid; place-items: center; padding: 6px 0 2px; }
+.board-svg { width: min(100%, 300px); height: auto; overflow: visible; }
+.board-svg .cable { fill: none; stroke: var(--muted); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 2 10; transition: stroke .3s; }
+.board-svg .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 3; }
+.board-svg .silk { fill: none; stroke: var(--silk); stroke-width: 1.5; opacity: .7; }
+.board-svg .silk-text { fill: var(--silk); font: 600 11px var(--font); letter-spacing: .04em; }
+.board-svg .chip { fill: var(--chip); stroke: var(--pcb-edge); stroke-width: 1.5; }
+.board-svg .chip-text { fill: var(--silk); font: 600 15px var(--font); }
+[data-skin="minimal"] .board-svg .chip-text, [data-skin="minimal"] .board-svg .silk-text { fill: var(--ink); }
+.board-svg .pin { fill: var(--copper); }
+.board-svg .usb { fill: #aab1b6; stroke: #6f777c; stroke-width: 1.5; }
+[data-skin="minimal"] .board-svg .usb { fill: var(--panel); stroke: var(--ink); }
+.board-svg .btn-cap { fill: #d9dde0; stroke: #6f777c; stroke-width: 1.5; }
+[data-skin="minimal"] .board-svg .btn-cap { fill: var(--panel); stroke: var(--ink); }
+.board-svg .led { fill: var(--led-off); stroke: var(--pcb-edge); stroke-width: 1.5; transition: fill .2s; }
+.board-svg .glow { fill: none; opacity: 0; }
+.bench[data-state="connecting"] .cable, .bench[data-state="writing"] .cable, .bench[data-state="waiting"] .cable,
+.bench[data-state="done"] .cable { stroke: var(--ink); stroke-dasharray: none; }
+.bench[data-state="connecting"] .led { fill: var(--warn); animation: blink 1s steps(2, start) infinite; }
+.bench[data-state="writing"] .led { fill: var(--accent); animation: blink .35s steps(2, start) infinite; }
+.bench[data-state="waiting"] .led { fill: var(--warn); animation: breathe 1.6s ease-in-out infinite; }
+.bench[data-state="done"] .led { fill: var(--ok); }
+.bench[data-state="done"] .glow { fill: var(--ok); opacity: .28; }
+.bench[data-state="error"] .led { fill: var(--err); }
+@keyframes blink { to { visibility: hidden; } }
+@keyframes breathe { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .bench .led { animation: none !important; } body { transition: none; } }
+
+.status { font-size: 1rem; min-height: 3.1em; }
+.status.ok { color: var(--ok); font-weight: 600; }
+.status.warn { color: var(--warn); font-weight: 600; }
+.status.err { color: var(--err); font-weight: 600; }
+.meter { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.meter[hidden] { display: none; }
+.meter > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+[data-skin="workbench"] .meter { border-radius: 2px; }
+[data-skin="workbench"] .meter > i { background: repeating-linear-gradient(90deg, var(--copper) 0 10px, var(--accent) 10px 12px); }
+
+.result { border: 2px solid var(--ok); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 10px; }
+.result[hidden] { display: none; }
+.result .code-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.code { font: 600 1.65rem var(--mono); letter-spacing: .08em; }
+.result .qr { background: #fff; width: 148px; padding: 6px; border-radius: 6px; }
+.qr svg { display: block; width: 100%; height: auto; }
+.result p { color: var(--muted); font-size: .93rem; }
+
+details.log { border-top: 1px solid var(--line); padding: 12px 22px 18px; }
+details.log summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: .93rem; }
+#log { margin-top: 10px; background: var(--log-bg); color: var(--log-ink); font: 12.5px/1.45 var(--mono); padding: 10px 12px; border-radius: var(--radius-sm); height: 210px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+
+/* Board list */
+.list { margin-top: 24px; padding: 22px; }
+.list-head { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.list .hint { margin: 0 0 12px; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th, td { text-align: start; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: .88rem; }
+td.mono { font-family: var(--mono); }
+td.empty { color: var(--muted); padding: 18px 8px; }
+
+footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: .88rem; }
+
+/* Small screens */
+@media (max-width: 860px) {
+  .setup { grid-template-columns: 1fr; }
+  .bench { border-inline-start: 0; border-top: 1px solid var(--line); }
+  .stepper { grid-template-columns: repeat(2, 1fr); }
+  .stepper li::after { display: none; }
+}
+@media (max-width: 620px) {
+  .wrap { padding: 16px 12px 36px; }
+  .steps, .bench, .list { padding: 16px; }
+  .stepper { padding: 14px 16px; }
+  table, thead, tbody, tr, td { display: block; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
+  td { border: 0; padding: 3px 0; display: flex; gap: 10px; }
+  td[data-label]::before { content: attr(data-label); color: var(--muted); min-width: 8.5em; font-family: var(--font); }
+}
+
+/* Labels: print only */
+.labels { display: none; }
+@media print {
+  @page { margin: 10mm; }
+  body { background: #fff !important; color: #000; }
+  .wrap > *:not(.labels) { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; font-family: system-ui, sans-serif; }
+  .label { border: 1px solid #000; border-radius: 3mm; padding: 4mm; break-inside: avoid; display: flex; gap: 3mm; align-items: center; }
+  .label .qr { width: 22mm; flex: none; }
+  .label b { display: block; font-size: 11pt; }
+  .label span { display: block; font: 600 13pt ui-monospace, Consolas, monospace; margin-top: 1mm; }
+  .label small { display: block; font-size: 8pt; margin-top: 1mm; }
+}
 </style>
 </head>
 <body>
-<main>
-  <h1>Smart 3V board setup</h1>
-  <p class="lead">First-time install for a new board over USB. After this, updates arrive through Home Assistant.</p>
-  <p class="note" id="pageVersion">Page version 4 (2026-11-21)</p>
+<div class="wrap">
 
-  <div class="card err" id="unsupported">
-    This browser cannot talk to USB serial devices. Open this page in Chrome or Edge on a computer, over https or from localhost.
-  </div>
-
-  <div class="card">
-    <div class="step"><span class="num">1</span><h2>Choose the board</h2></div>
-    <select id="board"></select>
-    <p class="note" id="boardNote" style="margin-top:8px"></p>
-  </div>
-
-  <div class="card">
-    <div class="step"><span class="num">2</span><h2>Connect and install</h2></div>
-    <p class="note">Plug the board in with a data USB cable and close any serial monitor. If it does not connect, unplug it, hold <b>BOOT</b>, plug it in, then release.</p>
-    <p class="warn">This erases the board completely. A board that is already paired loses its pairing and gets a new pairing code.</p>
-    <div class="row">
-      <button id="install" disabled>Connect and install</button>
-      <button id="readOnly" class="secondary">Only read the pairing code</button>
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="6" y="9" width="36" height="30" rx="5" fill="var(--pcb)" stroke="var(--pcb-edge)" stroke-width="2.5"/>
+        <rect x="19" y="4" width="10" height="7" rx="1.5" fill="#aab1b6" stroke="var(--pcb-edge)" stroke-width="1.5"/>
+        <rect x="16" y="17" width="16" height="14" rx="2" fill="var(--chip)" stroke="var(--pcb-edge)" stroke-width="1.5"/>
+        <circle cx="35" cy="33" r="3" fill="var(--accent)"/>
+      </svg>
+      <div>
+        <h1 data-i18n="title">Smart 3V board setup</h1>
+        <p class="lead" data-i18n="lead">Install Smart 3V on a new board over USB and get its pairing code. After that, updates arrive through Home Assistant.</p>
+      </div>
     </div>
-    <progress id="progress" value="0" max="100" hidden></progress>
-    <p id="status" class="note" style="margin-top:10px"></p>
-    <div id="result"></div>
-    <div id="log" aria-label="Log"></div>
-  </div>
-
-  <div class="card">
-    <div class="step"><span class="num">3</span><h2>Your boards</h2></div>
-    <p class="note">This list is saved only in this browser on this computer. Download a copy to keep it. Treat pairing codes like keys.</p>
-    <table id="list"><thead><tr><th>Board ID</th><th>Pairing code</th><th>Firmware</th><th>Board type</th><th>Set up</th><th></th></tr></thead><tbody></tbody></table>
-    <div class="row">
-      <button id="exportCsv" class="secondary">Download list (CSV)</button>
-      <button id="print" class="secondary">Print labels</button>
+    <div class="controls">
+      <fieldset class="seg" id="skins">
+        <legend data-i18n="ui.look">Look</legend>
+        <label><input type="radio" name="skin" value="workbench"><span data-i18n="skin.workbench">Workbench</span></label>
+        <label><input type="radio" name="skin" value="friendly"><span data-i18n="skin.friendly">Friendly</span></label>
+        <label><input type="radio" name="skin" value="minimal"><span data-i18n="skin.minimal">Minimal</span></label>
+      </fieldset>
+      <button class="icon-btn" id="mode" type="button" aria-pressed="false" data-i18n-aria="mode.toDark" aria-label="Use dark mode">
+        <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4a8.6 8.6 0 1 0 11.2 11.2Z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/></svg>
+      </button>
+      <label class="lang" id="langWrap" hidden><span class="sr" hidden data-i18n="ui.language">Language</span>
+        <select id="lang" data-i18n-aria="ui.language" aria-label="Language"></select>
+      </label>
     </div>
-  </div>
+  </header>
+
+  <div class="panel notice" id="unsupported" hidden data-i18n="unsupported">This browser can't talk to USB devices. Open this page in Chrome or Edge on a computer.</div>
+
+  <section class="panel" aria-labelledby="stepsLabel">
+    <h2 id="stepsLabel" hidden data-i18n="steps.label">Setup progress</h2>
+    <ol class="stepper" id="stepper">
+      <li data-step="0"><span class="pad">1</span><span class="name" data-i18n="steps.choose">Choose board</span></li>
+      <li data-step="1"><span class="pad">2</span><span class="name" data-i18n="steps.connect">Connect</span></li>
+      <li data-step="2"><span class="pad">3</span><span class="name" data-i18n="steps.install">Install</span></li>
+      <li data-step="3"><span class="pad">4</span><span class="name" data-i18n="steps.code">Pairing code</span></li>
+    </ol>
+
+    <div class="setup">
+      <div class="steps">
+        <div class="field">
+          <label for="board" data-i18n="choose.label">Which board is this?</label>
+          <select id="board"></select>
+          <p class="hint" id="boardNote"></p>
+        </div>
+
+        <div class="howto">
+          <h3 data-i18n="connect.title">Plug it in</h3>
+          <p data-i18n="connect.cable">Connect the board to this computer with a USB cable that carries data, not a charge-only cable. Close any other program that is talking to it.</p>
+          <p class="hint" data-i18n="connect.boot">Won't connect? Unplug it, hold the BOOT button, plug it back in, then let go.</p>
+        </div>
+
+        <div class="caution">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z"/></svg>
+          <p data-i18n="erase.warning">Installing erases the board. A board that was already paired loses that pairing and gets a new code.</p>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="install" type="button" disabled data-i18n="btn.install">Install Smart 3V</button>
+          <button class="btn quiet" id="readOnly" type="button" data-i18n="btn.read">Read pairing code</button>
+        </div>
+      </div>
+
+      <div class="bench" id="bench" data-state="idle" aria-labelledby="benchLabel">
+        <h3 id="benchLabel" hidden data-i18n="bench.label">Board status</h3>
+        <div class="board-wrap">
+          <svg class="board-svg" viewBox="0 0 300 250" aria-hidden="true">
+            <path class="cable" d="M150 4 V 40"/>
+            <rect class="usb" x="126" y="36" width="48" height="26" rx="6"/>
+            <rect class="pcb" x="60" y="52" width="180" height="186" rx="14"/>
+            <g class="pins">
+              <circle class="pin" cx="76" cy="84" r="5"/><circle class="pin" cx="76" cy="108" r="5"/><circle class="pin" cx="76" cy="132" r="5"/>
+              <circle class="pin" cx="76" cy="156" r="5"/><circle class="pin" cx="76" cy="180" r="5"/><circle class="pin" cx="76" cy="204" r="5"/>
+              <circle class="pin" cx="224" cy="84" r="5"/><circle class="pin" cx="224" cy="108" r="5"/><circle class="pin" cx="224" cy="132" r="5"/>
+              <circle class="pin" cx="224" cy="156" r="5"/><circle class="pin" cx="224" cy="180" r="5"/><circle class="pin" cx="224" cy="204" r="5"/>
+            </g>
+            <rect class="chip" x="108" y="96" width="84" height="74" rx="5"/>
+            <text class="chip-text" id="chipText" x="150" y="138" text-anchor="middle">C6</text>
+            <rect class="silk" x="100" y="88" width="100" height="90" rx="7"/>
+            <rect class="btn-cap" x="98" y="196" width="26" height="18" rx="4"/>
+            <rect class="btn-cap" x="176" y="196" width="26" height="18" rx="4"/>
+            <text class="silk-text" x="111" y="230" text-anchor="middle">BOOT</text>
+            <text class="silk-text" x="189" y="230" text-anchor="middle">RST</text>
+            <circle class="glow" cx="214" cy="68" r="14"/>
+            <circle class="led" cx="214" cy="68" r="6"/>
+          </svg>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <div class="meter" id="meter" hidden><i id="meterBar"></i></div>
+        <div class="result" id="result" hidden></div>
+      </div>
+    </div>
+
+    <details class="log" id="logBox">
+      <summary data-i18n="log.summary">Technical log</summary>
+      <div id="log" tabindex="0" aria-label="Log"></div>
+    </details>
+  </section>
+
+  <section class="panel list" aria-labelledby="listTitle">
+    <div class="list-head">
+      <h2 id="listTitle" data-i18n="list.title">Your boards</h2>
+      <div class="actions">
+        <button class="btn quiet small" id="exportCsv" type="button" data-i18n="btn.csv">Download list (CSV)</button>
+        <button class="btn quiet small" id="print" type="button" data-i18n="btn.print">Print labels</button>
+      </div>
+    </div>
+    <p class="hint" data-i18n="list.note">This list is saved only in this browser. Download a copy to keep it safe, and treat pairing codes like keys.</p>
+    <table id="list">
+      <thead><tr>
+        <th data-i18n="col.id">Board ID</th><th data-i18n="col.code">Pairing code</th><th data-i18n="col.firmware">Firmware</th>
+        <th data-i18n="col.type">Board type</th><th data-i18n="col.date">Set up</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <span id="pageVersion" data-page-version="5">Page version 5</span>
+    <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
+  </footer>
 
   <div class="labels" id="labels"></div>
-</main>
+</div>
 
 <script src="./vendor/qrcode-generator-1.4.4.js"></script>
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
+const PAGE_VERSION = 5;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
+const UI_KEY = "smart3v.ui.v1";
 const LOG_READ_MS = 80000; // the board repeats its pairing code every 30 s while unpaired
 
 let boards = [];
 let busy = false;
 
-// ---- small helpers ---------------------------------------------------------
+// ---- settings (look, dark/light, language) ---------------------------------
+function loadUi() { try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch { return {}; } }
+function saveUi(patch) { try { localStorage.setItem(UI_KEY, JSON.stringify({ ...loadUi(), ...patch })); } catch { /* private mode */ } }
+
+// ---- translations ------------------------------------------------------------
+// All text lives in lang/<code>.json. To add a language: copy lang/en.json, translate the values,
+// and add it to lang/languages.json. Missing keys fall back to English.
+let STR = {}, FALLBACK = {}, LANG = "en", LANGS = [];
+function t(key, vars = {}) {
+  const s = STR[key] ?? FALLBACK[key] ?? key;
+  return s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+}
+async function fetchJson(url) { const r = await fetch(url, { cache: "no-cache" }); if (!r.ok) throw new Error(r.status); return r.json(); }
+async function setLanguage(code) {
+  const meta = LANGS.find((l) => l.code === code) || LANGS[0] || { code: "en", dir: "ltr" };
+  try { STR = meta.code === "en" ? FALLBACK : await fetchJson(`lang/${meta.code}.json`); } catch { STR = FALLBACK; }
+  LANG = meta.code;
+  document.documentElement.lang = meta.code;
+  document.documentElement.dir = meta.dir || "ltr";
+  applyStatic();
+}
+function applyStatic() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); });
+  document.title = t("title");
+  $("pageVersion").textContent = t("footer.version", { n: PAGE_VERSION });
+  updateModeButton();
+  fillBoardSelect();
+  renderList();
+  renderStatus();
+  renderResult();
+}
+
+// ---- small helpers -----------------------------------------------------------
 function log(text) {
   const el = $("log");
   el.textContent += text;
   if (el.textContent.length > 60000) el.textContent = el.textContent.slice(-40000);
   el.scrollTop = el.scrollHeight;
 }
-function status(text, cls = "note") { const s = $("status"); s.className = cls; s.textContent = text; }
+let lastStatus = { key: "status.idle", vars: {}, cls: "" };
+function status(key, cls = "", vars = {}) { lastStatus = { key, vars, cls }; renderStatus(); }
+function renderStatus() { const s = $("status"); s.className = "status " + lastStatus.cls; s.textContent = t(lastStatus.key, lastStatus.vars); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const today = () => new Date().toISOString().slice(0, 10);
+
+// Errors that carry a translation key, so the message follows the chosen language.
+class UserError extends Error { constructor(key, vars = {}) { super(key); this.key = key; this.vars = vars; } }
+function failText(e) { return e instanceof UserError ? t(e.key, e.vars) : (e && e.message ? e.message : String(e)); }
 
 function loadList() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { return []; } }
 function saveList(list) { try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch { /* private mode */ } }
 
+// ---- progress: stepper, board drawing, meter --------------------------------
+// phase: 0 choose, 1 connect, 2 install, 3 code, 4 all done. failed marks the current step red.
+let phase = 1, failed = false;
+function setPhase(p, opts = {}) {
+  phase = p; failed = !!opts.failed;
+  $("stepper").querySelectorAll("li").forEach((li) => {
+    const i = Number(li.dataset.step);
+    li.className = i < phase ? "done" : i === phase ? (failed ? "active failed" : "active") : "";
+    if (i === phase) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+  });
+  if (opts.state) $("bench").dataset.state = opts.state;
+}
+function meter(pct) {
+  const m = $("meter");
+  if (pct == null) { m.hidden = true; return; }
+  m.hidden = false; $("meterBar").style.width = pct + "%";
+}
+
+// ---- board list and labels ---------------------------------------------------
 function renderList() {
   const list = loadList();
   const body = $("list").querySelector("tbody");
-  body.innerHTML = list.length ? "" : '<tr><td colspan="6" class="note">No boards yet.</td></tr>';
+  body.innerHTML = list.length ? "" : `<tr><td colspan="6" class="empty">${esc(t("list.empty"))}</td></tr>`;
   for (const b of list) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="mono">${esc(b.id)}</td><td class="mono">${esc(b.code)}</td><td>${esc(b.firmware || "")}</td>` +
-      `<td>${esc(b.board || "")}</td><td>${esc(b.date || "")}</td><td><button class="secondary" data-id="${esc(b.id)}">Remove</button></td>`;
+    tr.innerHTML =
+      `<td class="mono" data-label="${esc(t("col.id"))}">${esc(b.id)}</td>` +
+      `<td class="mono" data-label="${esc(t("col.code"))}">${esc(b.code)}</td>` +
+      `<td data-label="${esc(t("col.firmware"))}">${esc(b.firmware || "")}</td>` +
+      `<td data-label="${esc(t("col.type"))}">${esc(b.board || "")}</td>` +
+      `<td data-label="${esc(t("col.date"))}">${esc(b.date || "")}</td>` +
+      `<td><button class="btn quiet small" type="button" data-id="${esc(b.id)}">${esc(t("btn.remove"))}</button></td>`;
     body.appendChild(tr);
   }
   $("labels").innerHTML = list.map((b) =>
     `<div class="label">${b.qr ? `<div class="qr">${qrSvg(b.qr)}</div>` : ""}<div><b>Smart 3V ${esc(b.id)}</b><span>${esc(b.code)}</span>` +
-    `<small>${b.qr ? "Matter: scan the code or type the number." : "Matter pairing code. Type it in Home Assistant."}</small></div></div>`).join("");
+    `<small>${esc(b.qr ? t("label.scan") : t("label.type"))}</small></div></div>`).join("");
 }
 
 function remember(entry) {
@@ -148,15 +524,34 @@ function remember(entry) {
   renderList();
 }
 
+// ---- board types -------------------------------------------------------------
 function selectedBoard() { return boards.find((b) => b.id === $("board").value); }
+
+function fillBoardSelect() {
+  const sel = $("board"), keep = sel.value;
+  sel.innerHTML = "";
+  for (const b of boards) {
+    const o = document.createElement("option");
+    o.value = b.id;
+    o.textContent = b.name + (b.status === "ready" ? "" : b.status === "planned" ? t("board.suffixPlanned") : t("board.suffixNotSupported"));
+    sel.appendChild(o);
+  }
+  if (keep) sel.value = keep;
+  updateBoardNote();
+}
 
 function updateBoardNote() {
   const b = selectedBoard();
   if (!b) return;
   const ready = b.status === "ready";
-  const state = ready ? `Firmware ${b.firmware.version}.` : b.status === "planned" ? "Not available yet." : "Cannot be set up from this page.";
+  const state = ready ? t("board.ready", { version: b.firmware.version }) : b.status === "planned" ? t("board.planned") : t("board.notSupported");
   $("boardNote").textContent = `${state} ${b.notes || ""}`;
+  $("chipText").textContent = (b.chip || "").replace(/^ESP32-/, "");
   $("install").disabled = busy || !ready || !("serial" in navigator);
+  if (!busy && phase <= 1) {
+    setPhase(ready ? 1 : 0, { state: "idle" });
+    status(ready ? "status.idle" : "status.notReady");
+  }
 }
 
 function setBusy(on) {
@@ -172,7 +567,7 @@ async function sha256Hex(bytes) {
 }
 
 // ---- reading the board's start-up log ---------------------------------------
-// Looks for:  "Board A1B2C3 (Smart 3V A1B2C3)"  and  "Manual pairing code: 12345678901"
+// Looks for:  "Board A1B2C3 (Smart 3V A1B2C3)", "Manual pairing code: 12345678901" and "MT:..."
 async function readPairingInfo(port) {
   await port.open({ baudRate: 115200 });
   // Opening the port switches DTR and RTS on. On the C6's built-in USB port, releasing RTS while DTR is
@@ -228,7 +623,7 @@ async function findPortAgain(oldPort) {
     if (same) { log("\n[board reconnected]\n"); return same; }
     await sleep(500);
   }
-  throw new Error("the board did not come back after the restart");
+  throw new UserError("err.noReturn");
 }
 
 // Matter QR payload ("MT:...") -> SVG. Matter's characters fit QR alphanumeric mode.
@@ -242,107 +637,140 @@ function qrSvg(payload, cell = 4) {
   } catch { return ""; }
 }
 
+// ---- result ----------------------------------------------------------------
+let lastResult = null;
+function renderResult() {
+  const box = $("result");
+  if (!lastResult) { box.hidden = true; box.innerHTML = ""; return; }
+  const r = lastResult;
+  box.hidden = false;
+  box.innerHTML =
+    `<h3>${esc(t("result.title", { id: r.id }))}</h3>` +
+    `<div class="code-row"><span class="code">${esc(r.code)}</span>` +
+    `<button class="btn quiet small" type="button" id="copyCode">${esc(t("btn.copy"))}</button></div>` +
+    (r.qr ? `<div class="qr">${qrSvg(r.qr)}</div>` : "") +
+    `<p>${esc(t(r.qr ? "result.how" : "result.howNoQr"))}</p>`;
+  $("copyCode").addEventListener("click", async (e) => {
+    try { await navigator.clipboard.writeText(r.code); e.target.textContent = t("btn.copied"); } catch { /* no clipboard */ }
+  });
+}
+
 function showResult(info, board, fwVersion) {
   if (info.id && info.code) {
-    remember({ id: info.id, code: info.code, qr: info.qr || (loadList().find((b) => b.id === info.id) || {}).qr || "", firmware: fwVersion || "", board: board ? board.name : "", date: new Date().toISOString().slice(0, 10) });
-    $("result").innerHTML = `<div class="result"><div>Board <b>${esc(info.id)}</b> is ready. Its pairing code:</div>` +
-      `<div class="code">${esc(info.code)}</div>` +
-      (info.qr ? `<div class="qr">${qrSvg(info.qr)}</div>` : "") +
-      `<div class="note">In Home Assistant: Add Matter device, then type this code. It has been added to the list below.</div></div>`;
-    status("Done.", "ok");
+    const qr = info.qr || (loadList().find((b) => b.id === info.id) || {}).qr || "";
+    remember({ id: info.id, code: info.code, qr, firmware: fwVersion || "", board: board ? board.name : "", date: today() });
+    lastResult = { id: info.id, code: info.code, qr };
+    renderResult();
+    setPhase(4, { state: "done" });
+    status("status.done", "ok", { id: info.id });
   } else if (info.paired) {
-    status("This board is already paired, so it does not print its pairing code. Nothing was changed.", "warn");
+    setPhase(3, { state: "idle" });
+    status("status.paired", "warn");
   } else {
-    status("The board did not print a pairing code in time. Unplug it, plug it back in, and use \"Only read the pairing code\".", "warn");
+    setPhase(3, { failed: true, state: "error" });
+    status("status.noCode", "warn");
   }
+}
+
+function startRun() {
+  lastResult = null; renderResult();
+  $("log").textContent = "";
+  $("logBox").open = false;
+}
+function failRun(e) {
+  if (e && e.name === "NotFoundError") { setPhase(1, { state: "idle" }); status("status.noPort", "warn"); return; }
+  setPhase(phase, { failed: true, state: "error" });
+  status("status.failed", "err", { msg: failText(e) });
+  $("logBox").open = true;
 }
 
 // ---- actions -----------------------------------------------------------------
 async function install() {
   const board = selectedBoard();
   if (!board || board.status !== "ready") return;
-  if (!confirm(`Erase the connected board and install Smart 3V ${board.firmware.version} for "${board.name}"?`)) return;
+  if (!confirm(t("confirm.install", { version: board.firmware.version, name: board.name }))) return;
 
   setBusy(true);
-  $("result").innerHTML = "";
-  $("log").textContent = "";
-  $("progress").hidden = false;
-  $("progress").value = 0;
+  startRun();
   let transport = null, port = null;
   try {
-    status("Downloading the firmware...");
+    setPhase(1, { state: "idle" });
+    status("status.download");
     const res = await fetch(board.firmware.file, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Could not download the firmware (${res.status}).`);
+    if (!res.ok) throw new UserError("err.download", { code: res.status });
     const image = new Uint8Array(await res.arrayBuffer());
     if (image.length !== board.firmware.size || (await sha256Hex(image)) !== board.firmware.sha256) {
-      throw new Error("The downloaded firmware does not match its checksum. Nothing was written.");
+      throw new UserError("err.checksum");
     }
 
-    status("Choose the board's port in the browser's pop-up...");
+    status("status.pickPort");
     port = await navigator.serial.requestPort();
     transport = new Transport(port, false);
-    const terminal = { clean() {}, writeLine: (t) => log(t + "\n"), write: (t) => log(t) };
+    const terminal = { clean() {}, writeLine: (s) => log(s + "\n"), write: (s) => log(s) };
     const loader = new ESPLoader({ transport, baudrate: 115200, terminal });
 
-    status("Connecting...");
+    setPhase(1, { state: "connecting" });
+    status("status.connecting");
     await loader.main();
     const chip = loader.chip.CHIP_NAME;
-    if (chip !== board.chip) {
-      throw new Error(`This is an ${chip} board, but "${board.name}" needs an ${board.chip}. Nothing was written.`);
-    }
+    if (chip !== board.chip) throw new UserError("err.chip", { chip, name: board.name, need: board.chip });
 
-    status("Erasing and writing. Do not unplug the board...");
+    setPhase(2, { state: "writing" });
+    status("status.writing");
+    meter(0);
     await loader.writeFlash({
       fileArray: [{ data: image, address: board.firmware.address }],
       flashMode: "keep", flashFreq: "keep", flashSize: "keep",
       eraseAll: true, compress: true,
-      reportProgress: (_i, written, total) => { $("progress").value = Math.round((written / total) * 100); },
+      reportProgress: (_i, written, total) => meter(Math.round((written / total) * 100)),
     });
 
-    status("Restarting the board...");
+    status("status.restart");
     await loader.after("hard_reset");
     await transport.disconnect();
     transport = null;
+    meter(null);
     await sleep(2500);
 
-    status("Waiting for the board to print its pairing code (up to a minute)...");
+    setPhase(3, { state: "waiting" });
+    status("status.waitCode");
     let info;
     try {
       // The C6's built-in USB port disconnects and comes back as a "new" port after a restart.
       // Chrome remembers the permission, so find it again without asking the user.
       for (let attempt = 1; ; attempt++) {
         try { info = await readPairingInfo(await findPortAgain(port)); break; }
-        catch (err) { if (attempt >= 3) throw err; log(`\n[port not ready yet: ${err.message}]\n`); await sleep(2000); }
+        catch (err) { if (attempt >= 3) throw err; log(`\n[port not ready yet: ${failText(err)}]\n`); await sleep(2000); }
       }
     } catch (e) {
-      log(`\n[could not reopen the port: ${e.message}]\n`);
-      status("Installed. The port changed after the restart: click \"Only read the pairing code\" and choose the board again.", "warn");
+      log(`\n[could not reopen the port: ${failText(e)}]\n`);
+      setPhase(3, { state: "idle" });
+      status("status.portChanged", "warn");
       return;
     }
     showResult(info, board, board.firmware.version);
   } catch (e) {
-    if (e && e.name === "NotFoundError") status("No port was chosen.", "warn");
-    else status(`Failed: ${e && e.message ? e.message : e}`, "err");
+    failRun(e);
   } finally {
     if (transport) { try { await transport.disconnect(); } catch { /* ignore */ } }
-    $("progress").hidden = true;
+    meter(null);
     setBusy(false);
   }
 }
 
 async function readOnly() {
   setBusy(true);
-  $("result").innerHTML = "";
-  $("log").textContent = "";
+  startRun();
   try {
-    status("Choose the board's port in the browser's pop-up...");
+    setPhase(1, { state: "idle" });
+    status("status.pickPort");
     const port = await navigator.serial.requestPort();
-    status("Reading the board's log (up to 80 seconds). An unpaired board repeats its code every 30 seconds...");
+    setPhase(3, { state: "waiting" });
+    status("status.reading");
     const info = await readPairingInfo(port);
     showResult(info, null, "");
   } catch (e) {
-    if (e && e.name === "NotFoundError") status("No port was chosen.", "warn");
-    else status(`Failed: ${e && e.message ? e.message : e}`, "err");
+    failRun(e);
   } finally {
     setBusy(false);
   }
@@ -359,31 +787,57 @@ function exportCsv() {
   URL.revokeObjectURL(a.href);
 }
 
+// ---- look and mode controls --------------------------------------------------
+function updateModeButton() {
+  const dark = document.documentElement.dataset.mode === "dark";
+  const b = $("mode");
+  b.setAttribute("aria-pressed", String(dark));
+  b.setAttribute("aria-label", t(dark ? "mode.toLight" : "mode.toDark"));
+  b.title = b.getAttribute("aria-label");
+}
+function initControls() {
+  const d = document.documentElement;
+  for (const r of document.querySelectorAll('input[name="skin"]')) {
+    r.checked = r.value === d.dataset.skin;
+    r.addEventListener("change", () => { d.dataset.skin = r.value; saveUi({ skin: r.value }); });
+  }
+  $("mode").addEventListener("click", () => {
+    d.dataset.mode = d.dataset.mode === "dark" ? "light" : "dark";
+    saveUi({ mode: d.dataset.mode });
+    updateModeButton();
+  });
+}
+
 // ---- start -------------------------------------------------------------------
 async function init() {
-  if (!("serial" in navigator)) $("unsupported").style.display = "block";
-  renderList();
-  try {
-    const res = await fetch("boards.json", { cache: "no-store" });
-    boards = (await res.json()).boards || [];
-  } catch {
-    status("Could not load the board list.", "err");
-  }
-  const sel = $("board");
-  for (const b of boards) {
-    const o = document.createElement("option");
-    o.value = b.id;
-    o.textContent = b.name + (b.status === "ready" ? "" : b.status === "planned" ? " (planned)" : " (not supported)");
-    sel.appendChild(o);
-  }
-  sel.addEventListener("change", updateBoardNote);
+  initControls();
+  if (!("serial" in navigator)) $("unsupported").hidden = false;
+
+  // Languages: English is built in as the fallback; the list decides whether the picker shows.
+  try { FALLBACK = await fetchJson("lang/en.json"); } catch { FALLBACK = {}; }
+  try { LANGS = (await fetchJson("lang/languages.json")).languages || []; } catch { LANGS = [{ code: "en", name: "English", dir: "ltr" }]; }
+  const saved = loadUi().lang;
+  const browser = (navigator.languages || [navigator.language || "en"]).map((l) => l.toLowerCase().split("-")[0]);
+  const pick = (saved && LANGS.some((l) => l.code === saved)) ? saved : (browser.find((c) => LANGS.some((l) => l.code === c)) || "en");
+  const sel = $("lang");
+  for (const l of LANGS) { const o = document.createElement("option"); o.value = l.code; o.textContent = l.name; sel.appendChild(o); }
+  sel.value = pick;
+  $("langWrap").hidden = LANGS.length < 2;
+  sel.addEventListener("change", () => { saveUi({ lang: sel.value }); setLanguage(sel.value); });
+
+  try { boards = (await fetchJson("boards.json")).boards || []; }
+  catch { boards = []; }
+  await setLanguage(pick);
+  if (!boards.length) status("status.boardsFailed", "err");
+
+  $("board").addEventListener("change", updateBoardNote);
   $("install").addEventListener("click", install);
   $("readOnly").addEventListener("click", readOnly);
   $("exportCsv").addEventListener("click", exportCsv);
   $("print").addEventListener("click", () => window.print());
   $("list").addEventListener("click", (e) => {
     const id = e.target && e.target.dataset ? e.target.dataset.id : null;
-    if (id && confirm(`Remove board ${id} from this list?`)) { saveList(loadList().filter((b) => b.id !== id)); renderList(); }
+    if (id && confirm(t("confirm.remove", { id }))) { saveList(loadList().filter((b) => b.id !== id)); renderList(); }
   });
   setBusy(false);
 }

@@ -17,7 +17,10 @@ Firmware updates for boards that are already installed come from the Home Assist
 | `index.html` | The page (one file, no build step) |
 | `boards.json` | The board types the page offers, and which firmware file each one uses |
 | `firmware/` | Full USB images, written at address 0 |
+| `lang/en.json` | Every piece of text on the page, in English |
+| `lang/languages.json` | The languages the page offers |
 | `vendor/esptool-js-0.7.1.js` | Espressif's esptool-js, Apache-2.0 (licence alongside) |
+| `vendor/qrcode-generator-1.4.4.js` | QR code drawing for results and labels, MIT (Kazuhiko Arase) |
 | `CNAME` | The custom domain for GitHub Pages. Do not delete |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are |
 
@@ -32,6 +35,19 @@ Firmware updates for boards that are already installed come from the Home Assist
 
 Every different hardware type needs its own firmware build and its own Matter product ID, so Home Assistant
 never offers a board the wrong update.
+
+## Looks and languages
+
+The page has three looks (Workbench, Friendly, Minimal), each in light and dark. The visitor's choice is
+remembered in their browser. All colours, fonts and shapes are CSS variables at the top of `index.html`,
+one block per look and mode.
+
+To add a language: copy `lang/en.json` to `lang/<code>.json` (for example `lang/nl.json`), translate the
+values (keep the keys and the `{placeholders}`), then add `{ "code": "nl", "name": "Nederlands", "dir": "ltr" }`
+to `lang/languages.json`. A language picker appears as soon as there are two languages. Any missing key falls
+back to English. Use `"dir": "rtl"` for right-to-left languages.
+
+When you change the page, raise `PAGE_VERSION` and `data-page-version` in `index.html`.
 
 ## Testing without the website
 
