@@ -467,7 +467,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="8">Page version 8</span>
+    <span id="pageVersion" data-page-version="9">Page version 9</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -478,7 +478,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 8;
+const PAGE_VERSION = 9;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";
@@ -572,7 +572,7 @@ function renderList() {
       `<td data-label="${esc(t("col.firmware"))}">${esc(b.firmware || "")}</td>` +
       `<td data-label="${esc(t("col.type"))}">${esc(b.board || "")}</td>` +
       `<td data-label="${esc(t("col.date"))}">${esc(b.date || "")}</td>` +
-      `<td><button class="btn quiet small" type="button" data-id="${esc(b.id)}">${esc(t("btn.remove"))}</button></td>`;
+      `<td><button class="btn quiet small" type="button" data-code="${esc(b.code)}" data-id="${esc(b.id)}">${esc(t("btn.remove"))}</button></td>`;
     body.appendChild(tr);
   }
   $("labels").innerHTML = list.map((b) =>
@@ -580,8 +580,10 @@ function renderList() {
     `<small>${esc(b.qr ? t("label.scan") : t("label.type"))}</small></div></div>`).join("");
 }
 
+// A board is the same board only if its pairing code or chip address (MAC) matches.
+// The board ID alone is not unique (firmware 3c.4 can give several boards the same ID).
 function remember(entry) {
-  const list = loadList().filter((b) => b.id !== entry.id);
+  const list = loadList().filter((b) => b.code !== entry.code && !(entry.mac && b.mac === entry.mac));
   list.push(entry);
   saveList(list);
   renderList();
@@ -679,13 +681,15 @@ async function readPairingInfo(port) {
 
 // After a restart, use the same port if it still works; otherwise wait (up to 15 s) for a
 // previously allowed port with the same USB IDs to reappear.
-async function findPortAgain(oldPort) {
+// "others" = ports that were already there before Install (other boards on this computer): never use them.
+async function findPortAgain(oldPort, others = []) {
   const want = oldPort.getInfo ? oldPort.getInfo() : {};
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     const ports = await navigator.serial.getPorts();
     if (ports.includes(oldPort)) return oldPort;
     const same = ports.find((p) => {
+      if (others.includes(p)) return false;
       const i = p.getInfo();
       return i.usbVendorId === want.usbVendorId && i.usbProductId === want.usbProductId;
     });
@@ -768,10 +772,10 @@ function renderResult() {
   });
 }
 
-function showResult(info, board, fwVersion) {
+function showResult(info, board, fwVersion, mac = "") {
   if (info.id && info.code) {
-    const qr = info.qr || (loadList().find((b) => b.id === info.id) || {}).qr || "";
-    remember({ id: info.id, code: info.code, qr, firmware: fwVersion || "", board: board ? board.name : "", date: today() });
+    const qr = info.qr || (loadList().find((b) => b.code === info.code) || {}).qr || "";
+    remember({ id: info.id, code: info.code, qr, mac, firmware: fwVersion || "", board: board ? board.name : "", date: today() });
     lastResult = { id: info.id, code: info.code, qr };
     renderResult();
     $("next").open = true;
@@ -823,6 +827,7 @@ async function install() {
 
     status("status.pickPort");
     port = await navigator.serial.requestPort();
+    const others = (await navigator.serial.getPorts()).filter((p) => p !== port);
     transport = new Transport(port, false);
     const terminal = { clean() {}, writeLine: (s) => log(s + "\n"), write: (s) => log(s) };
     const loader = new ESPLoader({ transport, baudrate: 115200, terminal });
@@ -831,6 +836,8 @@ async function install() {
     status("status.connecting");
     await loader.main();
     const chip = loader.chip.CHIP_NAME;
+    let mac = "";
+    try { mac = String(await loader.chip.readMac(loader)).toUpperCase(); } catch { /* optional */ }
     if (chip !== board.chip) throw new UserError("err.chip", { chip, name: board.name, need: board.chip });
 
     setPhase(2, { state: "writing" });
@@ -857,7 +864,7 @@ async function install() {
       // The C6's built-in USB port disconnects and comes back as a "new" port after a restart.
       // Chrome remembers the permission, so find it again without asking the user.
       for (let attempt = 1; ; attempt++) {
-        try { info = await readCode(await findPortAgain(port)); break; }
+        try { info = await readCode(await findPortAgain(port, others)); break; }
         catch (err) { if (attempt >= 3) throw err; log(`\n[port not ready yet: ${failText(err)}]\n`); await sleep(2000); }
       }
     } catch (e) {
@@ -866,7 +873,7 @@ async function install() {
       status("status.portChanged", "warn");
       return;
     }
-    showResult(info, board, board.firmware.version);
+    showResult(info, board, board.firmware.version, mac);
   } catch (e) {
     failRun(e);
   } finally {
@@ -895,8 +902,8 @@ async function readOnly() {
 }
 
 function exportCsv() {
-  const rows = [["board_id", "pairing_code", "qr_payload", "firmware", "board_type", "set_up"]]
-    .concat(loadList().map((b) => [b.id, b.code, b.qr || "", b.firmware || "", b.board || "", b.date || ""]));
+  const rows = [["board_id", "pairing_code", "qr_payload", "chip_mac", "firmware", "board_type", "set_up"]]
+    .concat(loadList().map((b) => [b.id, b.code, b.qr || "", b.mac || "", b.firmware || "", b.board || "", b.date || ""]));
   const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -954,8 +961,8 @@ async function init() {
   $("exportCsv").addEventListener("click", exportCsv);
   $("print").addEventListener("click", () => window.print());
   $("list").addEventListener("click", (e) => {
-    const id = e.target && e.target.dataset ? e.target.dataset.id : null;
-    if (id && confirm(t("confirm.remove", { id }))) { saveList(loadList().filter((b) => b.id !== id)); renderList(); }
+    const d = e.target && e.target.dataset ? e.target.dataset : {};
+    if (d.code && confirm(t("confirm.remove", { id: d.id }))) { saveList(loadList().filter((b) => b.code !== d.code)); renderList(); }
   });
   setBusy(false);
 }
