@@ -169,7 +169,14 @@ async function sha256Hex(bytes) {
 // Looks for:  "Board A1B2C3 (Smart 3V A1B2C3)"  and  "Manual pairing code: 12345678901"
 async function readPairingInfo(port) {
   await port.open({ baudRate: 115200 });
-  try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch { /* not all ports support it */ }
+  // Opening the port switches DTR and RTS on. On the C6's built-in USB port, releasing RTS while DTR is
+  // still on restarts the chip into download mode ("wait usb download"). Release DTR first, then RTS:
+  // that is a normal restart into the firmware, which also makes it print its pairing code straight away.
+  try {
+    await port.setSignals({ dataTerminalReady: false });
+    await sleep(100);
+    await port.setSignals({ requestToSend: false });
+  } catch { /* not all ports support it */ }
   const reader = port.readable.getReader();
   const decoder = new TextDecoder();
   let text = "", id = null, code = null, paired = false;
