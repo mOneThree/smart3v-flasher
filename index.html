@@ -184,8 +184,14 @@ button, select, input { font: inherit; color: inherit; }
 [data-skin="friendly"] .btn:not(.small) { padding: 12px 22px; }
 
 /* The board drawing */
+.bench-top { display: grid; gap: 14px; align-items: center; }
 .board-wrap { display: grid; place-items: center; padding: 6px 0 2px; }
-.board-svg { width: min(100%, 300px); height: auto; overflow: visible; }
+.board-svg { width: min(100%, 300px); height: auto; overflow: visible; transition: width .35s ease; }
+/* Once the code is ready, the drawing shrinks and sits beside the status, so the panel doesn't grow. */
+.bench[data-state="done"] .bench-top { grid-template-columns: 96px minmax(0, 1fr); }
+.bench[data-state="done"] .board-wrap { padding: 0; }
+.bench[data-state="done"] .board-svg { width: 96px; }
+.bench[data-state="done"] .status { min-height: 0; }
 .board-svg .cable { fill: none; stroke: var(--muted); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 2 10; transition: stroke .3s; }
 .board-svg .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 3; }
 .board-svg .silk { fill: none; stroke: var(--silk); stroke-width: 1.5; opacity: .7; }
@@ -208,9 +214,10 @@ button, select, input { font: inherit; color: inherit; }
 .bench[data-state="done"] .led { fill: var(--ok); }
 .bench[data-state="done"] .glow { fill: var(--ok); opacity: .28; }
 .bench[data-state="error"] .led { fill: var(--err); }
+.bench[data-state="replug"] .led { fill: var(--warn); animation: blink 1s steps(2, start) infinite; }
 @keyframes blink { to { visibility: hidden; } }
 @keyframes breathe { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .bench .led { animation: none !important; } body { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .bench .led { animation: none !important; } body, .board-svg { transition: none; } }
 
 .status { font-size: 1rem; min-height: 3.1em; }
 .status.ok { color: var(--ok); font-weight: 600; }
@@ -222,11 +229,13 @@ button, select, input { font: inherit; color: inherit; }
 [data-skin="workbench"] .meter { border-radius: 2px; }
 [data-skin="workbench"] .meter > i { background: repeating-linear-gradient(90deg, var(--copper) 0 10px, var(--accent) 10px 12px); }
 
-.result { border: 2px solid var(--ok); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 10px; }
+.result { border: 2px solid var(--ok); border-radius: var(--radius-sm); padding: 14px; display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 14px; align-items: start; }
+.result.no-qr { grid-template-columns: 1fr; }
+.result-info { display: grid; gap: 8px; min-width: 0; }
 .result[hidden] { display: none; }
 .result .code-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
-.code { font: 600 1.65rem var(--mono); letter-spacing: .08em; }
-.result .qr { background: #fff; width: 148px; padding: 6px; border-radius: 6px; }
+.code { font: 600 1.5rem var(--mono); letter-spacing: .06em; }
+.result .qr { background: #fff; width: 132px; padding: 5px; border-radius: 6px; }
 .qr svg { display: block; width: 100%; height: auto; }
 .result p { color: var(--muted); font-size: .93rem; }
 
@@ -253,6 +262,7 @@ footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color:
   .stepper { grid-template-columns: repeat(2, 1fr); }
   .stepper li::after { display: none; }
 }
+@media (max-width: 420px) { .result { grid-template-columns: 1fr; } }
 @media (max-width: 620px) {
   .wrap { padding: 16px 12px 36px; }
   .steps, .bench, .list { padding: 16px; }
@@ -370,6 +380,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 
       <div class="bench" id="bench" data-state="idle" aria-labelledby="benchLabel">
         <h3 id="benchLabel" hidden data-i18n="bench.label">Board status</h3>
+        <div class="bench-top">
         <div class="board-wrap">
           <svg class="board-svg" viewBox="0 0 300 250" aria-hidden="true">
             <path class="cable" d="M150 4 V 40"/>
@@ -393,6 +404,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
           </svg>
         </div>
         <p class="status" id="status" role="status" aria-live="polite"></p>
+        </div>
         <div class="meter" id="meter" hidden><i id="meterBar"></i></div>
         <div class="result" id="result" hidden></div>
       </div>
@@ -455,7 +467,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="7">Page version 7</span>
+    <span id="pageVersion" data-page-version="8">Page version 8</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -466,7 +478,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 7;
+const PAGE_VERSION = 8;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";
@@ -635,7 +647,7 @@ async function readPairingInfo(port) {
   } catch { /* not all ports support it */ }
   const reader = port.readable.getReader();
   const decoder = new TextDecoder();
-  let text = "", id = null, code = null, qr = null, paired = false, graceTimer = null;
+  let text = "", id = null, code = null, qr = null, paired = false, downloadMode = false, graceTimer = null;
   const deadline = Date.now() + LOG_READ_MS;
   const timer = setTimeout(() => reader.cancel().catch(() => {}), LOG_READ_MS);
   try {
@@ -649,6 +661,8 @@ async function readPairingInfo(port) {
       code = code || (text.match(/Manual pairing code:\s*(\d{11})/) || [])[1] || null;
       qr = qr || (text.match(/\b(MT:[0-9A-Z.\-]{19,})/) || [])[1] || null;
       if (/Paired\. Joining the Thread network/.test(text)) paired = true;
+      // The board restarted into install (download) mode: it will never print a code. Stop at once.
+      if (!id && /wait usb download/.test(text)) { downloadMode = true; break; }
       if ((id && code && qr) || paired) break;
       // The QR line may come a moment after the code: wait up to 3 s more for it, then stop anyway.
       if (id && code && !graceTimer) graceTimer = setTimeout(() => reader.cancel().catch(() => {}), 3000);
@@ -660,7 +674,7 @@ async function readPairingInfo(port) {
     try { reader.releaseLock(); } catch { /* ignore */ }
     try { await port.close(); } catch { /* ignore */ }
   }
-  return { id, code, qr, paired };
+  return { id, code, qr, paired, downloadMode };
 }
 
 // After a restart, use the same port if it still works; otherwise wait (up to 15 s) for a
@@ -681,6 +695,43 @@ async function findPortAgain(oldPort) {
   throw new UserError("err.noReturn");
 }
 
+// A clean restart into the firmware. esptool-js's hard_reset only releases RTS and leaves DTR as it
+// was, which on the C6's built-in USB can restart the chip into download mode instead.
+async function resetToApp(transport) {
+  await transport.setDTR(false);
+  await transport.setRTS(true);
+  await sleep(120);
+  await transport.setRTS(false);
+  await sleep(120);
+}
+
+// Waits for the user to unplug and replug the board; resolves with its port (permission is remembered).
+function waitForReplug(ms = 120000) {
+  return new Promise((resolve, reject) => {
+    const done = (fn, v) => { clearTimeout(timer); navigator.serial.removeEventListener("connect", onConnect); fn(v); };
+    const onConnect = (e) => done(resolve, e.target);
+    const timer = setTimeout(() => done(reject, new UserError("err.noReplug")), ms);
+    navigator.serial.addEventListener("connect", onConnect);
+  });
+}
+
+// Reads the code; if the board sits in install mode, asks for a replug and reads again.
+async function readCode(port) {
+  let info = await readPairingInfo(port);
+  if (info.downloadMode) {
+    log("\n[board is in install mode: waiting for it to be unplugged and plugged back in]\n");
+    setPhase(3, { state: "replug" });
+    status("status.replug", "warn");
+    const again = await waitForReplug();
+    log("\n[board plugged back in]\n");
+    await sleep(1500);
+    setPhase(3, { state: "waiting" });
+    status("status.waitCode");
+    info = await readPairingInfo(again);
+  }
+  return info;
+}
+
 // Matter QR payload ("MT:...") -> SVG. Matter's characters fit QR alphanumeric mode.
 function qrSvg(payload, cell = 4) {
   if (!payload || !window.qrcode) return "";
@@ -699,13 +750,14 @@ function renderResult() {
   if (!lastResult) { box.hidden = true; box.innerHTML = ""; return; }
   const r = lastResult;
   box.hidden = false;
+  box.classList.toggle("no-qr", !r.qr);
   box.innerHTML =
-    `<h3>${esc(t("result.title", { id: r.id }))}</h3>` +
+    (r.qr ? `<div class="qr">${qrSvg(r.qr)}</div>` : "") +
+    `<div class="result-info"><h3>${esc(t("result.title", { id: r.id }))}</h3>` +
     `<div class="code-row"><span class="code">${esc(r.code)}</span>` +
     `<button class="btn quiet small" type="button" id="copyCode">${esc(t("btn.copy"))}</button></div>` +
-    (r.qr ? `<div class="qr">${qrSvg(r.qr)}</div>` : "") +
     `<p>${esc(t(r.qr ? "result.how" : "result.howNoQr"))}</p>` +
-    `<p><a href="#next" id="toNext">${esc(t("result.next"))}</a></p>`;
+    `<p><a href="#next" id="toNext">${esc(t("result.next"))}</a></p></div>`;
   $("toNext").addEventListener("click", (e) => {
     e.preventDefault();
     $("next").open = true;
@@ -725,6 +777,9 @@ function showResult(info, board, fwVersion) {
     $("next").open = true;
     setPhase(4, { state: "done" });
     status("status.done", "ok", { id: info.id });
+  } else if (info.downloadMode) {
+    setPhase(3, { failed: true, state: "error" });
+    status("status.stuckDownload", "warn");
   } else if (info.paired) {
     setPhase(3, { state: "idle" });
     status("status.paired", "warn");
@@ -789,7 +844,7 @@ async function install() {
     });
 
     status("status.restart");
-    await loader.after("hard_reset");
+    await resetToApp(transport);
     await transport.disconnect();
     transport = null;
     meter(null);
@@ -802,7 +857,7 @@ async function install() {
       // The C6's built-in USB port disconnects and comes back as a "new" port after a restart.
       // Chrome remembers the permission, so find it again without asking the user.
       for (let attempt = 1; ; attempt++) {
-        try { info = await readPairingInfo(await findPortAgain(port)); break; }
+        try { info = await readCode(await findPortAgain(port)); break; }
         catch (err) { if (attempt >= 3) throw err; log(`\n[port not ready yet: ${failText(err)}]\n`); await sleep(2000); }
       }
     } catch (e) {
@@ -830,7 +885,7 @@ async function readOnly() {
     const port = await navigator.serial.requestPort();
     setPhase(3, { state: "waiting" });
     status("status.reading");
-    const info = await readPairingInfo(port);
+    const info = await readCode(port);
     showResult(info, null, "");
   } catch (e) {
     failRun(e);
