@@ -5,13 +5,13 @@
       "id": "c6-supermini",
       "name": "ESP32-C6 SuperMini (4 MB)",
       "chip": "ESP32-C6",
-      "status": "ready",
+      "status": "untested",
       "firmware": {
-        "version": "3c.4-effects",
-        "file": "firmware/smart3v-c6-supermini-v4.bin",
+        "version": "3c.5-effects",
+        "file": "firmware/smart3v-c6-supermini-v5.bin",
         "address": 0,
-        "size": 1831520,
-        "sha256": "ecb2065fd1a1bdaca68285f546cc40e57915bb7169e087a3fca998ff1f771ebb"
+        "size": 1831696,
+        "sha256": "0e6312feb1efbfd2bdc43c136691d86b61f2703c753b04065b960a88cfad8f35"
       },
       "notes": "LED driver on GPIO2, button on GPIO3. Matter over Thread, product ID 0x8001."
     },
@@ -21,11 +21,11 @@
       "chip": "ESP32-C6",
       "status": "untested",
       "firmware": {
-        "version": "3c.4-xiao",
-        "file": "firmware/smart3v-xiao-c6-v4.bin",
+        "version": "3c.5-xiao",
+        "file": "firmware/smart3v-xiao-c6-v5.bin",
         "address": 0,
-        "size": 1812624,
-        "sha256": "f819d9a50f6d070f26fb9a8891f5f8021ccf7689a4862e6714637d3e3066ca6d"
+        "size": 1812784,
+        "sha256": "2d92fc24d4c65da29bfc5c006d0fe1b7ec55490858dada3e19e40e220c6fd63a"
       },
       "notes": "LED driver on D2 (GPIO2), button on D1 (GPIO1), built-in antenna, user LED shows status. Matter over Thread, product ID 0x8003."
     },
@@ -35,11 +35,11 @@
       "chip": "ESP32-H2",
       "status": "untested",
       "firmware": {
-        "version": "3c.4-h2",
-        "file": "firmware/smart3v-h2-v4.bin",
+        "version": "3c.5-h2",
+        "file": "firmware/smart3v-h2-v5.bin",
         "address": 0,
-        "size": 1838272,
-        "sha256": "50ca536a8671dc74feed8960ff0590634d32d074e0bee0ca6192baba2d6f1436"
+        "size": 1838448,
+        "sha256": "ab6593f5675aaadb2cb96f32c9945e4d1b98bed8f427691c95fe3fa2dc655975"
       },
       "notes": "LED driver on GPIO10, button on GPIO11, WS2812 status LED on GPIO8. Needs 4 MB flash. Matter over Thread, product ID 0x8004."
     },
