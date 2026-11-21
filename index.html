@@ -467,7 +467,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="9">Page version 9</span>
+    <span id="pageVersion" data-page-version="10">Page version 10</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -478,7 +478,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 9;
+const PAGE_VERSION = 10;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";
@@ -699,9 +699,26 @@ async function findPortAgain(oldPort, others = []) {
   throw new UserError("err.noReturn");
 }
 
-// A clean restart into the firmware. esptool-js's hard_reset only releases RTS and leaves DTR as it
-// was, which on the C6's built-in USB can restart the chip into download mode instead.
-async function resetToApp(transport) {
+// Restart into the firmware after installing.
+// On the C6/H2 built-in USB (Serial/JTAG), a reset through the DTR/RTS lines keeps the chip's
+// "download mode" request, so it comes back in "wait usb download" (seen in tests 1-3). The RTC
+// watchdog does a fuller reset that clears it; this is what Python esptool does for these chips.
+// esptool-js 0.7.1 has no watchdogReset for the C6/H2, so write the LP_WDT registers here
+// (same values esptool-js uses for the ESP32-P4: key 0x50D83AA1, 2000 ticks, config 0xD0000202).
+const LP_WDT_BASE = { "ESP32-C6": 0x600B1C00, "ESP32-H2": 0x600B1C00 };
+async function resetToApp(loader, transport) {
+  const base = LP_WDT_BASE[loader.chip.CHIP_NAME];
+  if (base) {
+    log("Restarting the board with the watchdog...\n");
+    try {
+      await loader.writeReg(base + 0x18, 0x50D83AA1);  // write-protect off
+      await loader.writeReg(base + 0x04, 2000);        // stage 0 timeout
+      await loader.writeReg(base + 0x00, -805306110);  // enable, stage 0 = reset
+      await loader.writeReg(base + 0x18, 0);           // write-protect on
+    } catch { /* the chip may reset before the last reply arrives */ }
+    await sleep(500);
+    return;
+  }
   await transport.setDTR(false);
   await transport.setRTS(true);
   await sleep(120);
@@ -851,7 +868,7 @@ async function install() {
     });
 
     status("status.restart");
-    await resetToApp(transport);
+    await resetToApp(loader, transport);
     await transport.disconnect();
     transport = null;
     meter(null);
