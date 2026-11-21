@@ -19,15 +19,29 @@
       "id": "xiao-c6",
       "name": "Seeed XIAO ESP32-C6",
       "chip": "ESP32-C6",
-      "status": "planned",
-      "notes": "Needs its own build: button on GPIO1 (D1), GPIO3 drives the antenna switch."
+      "status": "untested",
+      "firmware": {
+        "version": "3c.4-xiao",
+        "file": "firmware/smart3v-xiao-c6-v4.bin",
+        "address": 0,
+        "size": 1812624,
+        "sha256": "f819d9a50f6d070f26fb9a8891f5f8021ccf7689a4862e6714637d3e3066ca6d"
+      },
+      "notes": "LED driver on D2 (GPIO2), button on D1 (GPIO1), built-in antenna, user LED shows status. Matter over Thread, product ID 0x8003."
     },
     {
       "id": "h2",
       "name": "ESP32-H2 boards",
       "chip": "ESP32-H2",
-      "status": "planned",
-      "notes": "Thread and Bluetooth, no Wi-Fi. Needs its own build and pin choice."
+      "status": "untested",
+      "firmware": {
+        "version": "3c.4-h2",
+        "file": "firmware/smart3v-h2-v4.bin",
+        "address": 0,
+        "size": 1838272,
+        "sha256": "50ca536a8671dc74feed8960ff0590634d32d074e0bee0ca6192baba2d6f1436"
+      },
+      "notes": "LED driver on GPIO10, button on GPIO11, WS2812 status LED on GPIO8. Needs 4 MB flash. Matter over Thread, product ID 0x8004."
     },
     {
       "id": "c3-s3",
