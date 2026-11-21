@@ -43,12 +43,15 @@
   td.mono { font-family: ui-monospace, Consolas, monospace; }
   td button { padding: 3px 9px; font-weight: 500; }
   #unsupported { display: none; }
+  .result .qr { background: #fff; width: 150px; padding: 6px; border-radius: 6px; margin-top: 10px; }
+  .qr svg { display: block; width: 100%; height: auto; }
   .labels { display: none; }
   @media print {
     body { background: #fff; color: #000; }
     main > *:not(.labels) { display: none !important; }
     .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; }
-    .label { border: 1px solid #000; border-radius: 3mm; padding: 4mm; break-inside: avoid; }
+    .label { border: 1px solid #000; border-radius: 3mm; padding: 4mm; break-inside: avoid; display: flex; gap: 3mm; align-items: center; }
+    .label .qr { width: 22mm; flex: none; }
     .label b { display: block; font-size: 11pt; }
     .label span { display: block; font: 600 13pt ui-monospace, Consolas, monospace; margin-top: 1mm; }
     .label small { display: block; font-size: 8pt; margin-top: 1mm; }
@@ -59,7 +62,7 @@
 <main>
   <h1>Smart 3V board setup</h1>
   <p class="lead">First-time install for a new board over USB. After this, updates arrive through Home Assistant.</p>
-  <p class="note" id="pageVersion">Page version 3 (2026-11-21)</p>
+  <p class="note" id="pageVersion">Page version 4 (2026-11-21)</p>
 
   <div class="card err" id="unsupported">
     This browser cannot talk to USB serial devices. Open this page in Chrome or Edge on a computer, over https or from localhost.
@@ -98,6 +101,7 @@
   <div class="labels" id="labels"></div>
 </main>
 
+<script src="./vendor/qrcode-generator-1.4.4.js"></script>
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
@@ -133,7 +137,8 @@ function renderList() {
     body.appendChild(tr);
   }
   $("labels").innerHTML = list.map((b) =>
-    `<div class="label"><b>Smart 3V ${esc(b.id)}</b><span>${esc(b.code)}</span><small>Matter pairing code. Type it, do not scan.</small></div>`).join("");
+    `<div class="label">${b.qr ? `<div class="qr">${qrSvg(b.qr)}</div>` : ""}<div><b>Smart 3V ${esc(b.id)}</b><span>${esc(b.code)}</span>` +
+    `<small>${b.qr ? "Matter: scan the code or type the number." : "Matter pairing code. Type it in Home Assistant."}</small></div></div>`).join("");
 }
 
 function remember(entry) {
@@ -180,7 +185,7 @@ async function readPairingInfo(port) {
   } catch { /* not all ports support it */ }
   const reader = port.readable.getReader();
   const decoder = new TextDecoder();
-  let text = "", id = null, code = null, paired = false;
+  let text = "", id = null, code = null, qr = null, paired = false, graceTimer = null;
   const deadline = Date.now() + LOG_READ_MS;
   const timer = setTimeout(() => reader.cancel().catch(() => {}), LOG_READ_MS);
   try {
@@ -192,16 +197,20 @@ async function readPairingInfo(port) {
       text = (text + chunk).slice(-20000);
       id = id || (text.match(/Board ([0-9A-F]{6}) \(/) || [])[1] || null;
       code = code || (text.match(/Manual pairing code:\s*(\d{11})/) || [])[1] || null;
+      qr = qr || (text.match(/\b(MT:[0-9A-Z.\-]{19,})/) || [])[1] || null;
       if (/Paired\. Joining the Thread network/.test(text)) paired = true;
-      if ((id && code) || paired) break;
+      if ((id && code && qr) || paired) break;
+      // The QR line may come a moment after the code: wait up to 3 s more for it, then stop anyway.
+      if (id && code && !graceTimer) graceTimer = setTimeout(() => reader.cancel().catch(() => {}), 3000);
     }
   } finally {
     clearTimeout(timer);
+    clearTimeout(graceTimer);
     try { await reader.cancel(); } catch { /* already closed */ }
     try { reader.releaseLock(); } catch { /* ignore */ }
     try { await port.close(); } catch { /* ignore */ }
   }
-  return { id, code, paired };
+  return { id, code, qr, paired };
 }
 
 // After a restart, use the same port if it still works; otherwise wait (up to 15 s) for a
@@ -222,11 +231,23 @@ async function findPortAgain(oldPort) {
   throw new Error("the board did not come back after the restart");
 }
 
+// Matter QR payload ("MT:...") -> SVG. Matter's characters fit QR alphanumeric mode.
+function qrSvg(payload, cell = 4) {
+  if (!payload || !window.qrcode) return "";
+  try {
+    const q = window.qrcode(0, "M");
+    q.addData(payload, "Alphanumeric");
+    q.make();
+    return q.createSvgTag({ cellSize: cell, margin: 2, scalable: true });
+  } catch { return ""; }
+}
+
 function showResult(info, board, fwVersion) {
   if (info.id && info.code) {
-    remember({ id: info.id, code: info.code, firmware: fwVersion || "", board: board ? board.name : "", date: new Date().toISOString().slice(0, 10) });
+    remember({ id: info.id, code: info.code, qr: info.qr || (loadList().find((b) => b.id === info.id) || {}).qr || "", firmware: fwVersion || "", board: board ? board.name : "", date: new Date().toISOString().slice(0, 10) });
     $("result").innerHTML = `<div class="result"><div>Board <b>${esc(info.id)}</b> is ready. Its pairing code:</div>` +
       `<div class="code">${esc(info.code)}</div>` +
+      (info.qr ? `<div class="qr">${qrSvg(info.qr)}</div>` : "") +
       `<div class="note">In Home Assistant: Add Matter device, then type this code. It has been added to the list below.</div></div>`;
     status("Done.", "ok");
   } else if (info.paired) {
@@ -328,8 +349,8 @@ async function readOnly() {
 }
 
 function exportCsv() {
-  const rows = [["board_id", "pairing_code", "firmware", "board_type", "set_up"]]
-    .concat(loadList().map((b) => [b.id, b.code, b.firmware || "", b.board || "", b.date || ""]));
+  const rows = [["board_id", "pairing_code", "qr_payload", "firmware", "board_type", "set_up"]]
+    .concat(loadList().map((b) => [b.id, b.code, b.qr || "", b.firmware || "", b.board || "", b.date || ""]));
   const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
