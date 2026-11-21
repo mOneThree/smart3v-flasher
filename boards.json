@@ -5,7 +5,7 @@
       "id": "c6-supermini",
       "name": "ESP32-C6 SuperMini (4 MB)",
       "chip": "ESP32-C6",
-      "status": "untested",
+      "status": "ready",
       "firmware": {
         "version": "3c.5-effects",
         "file": "firmware/smart3v-c6-supermini-v5.bin",
