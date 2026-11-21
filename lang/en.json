@@ -1,7 +1,6 @@
 {
   "title": "Smart 3V board setup",
   "lead": "Install Smart 3V on a new board over USB and get its pairing code. After that, updates arrive through Home Assistant.",
-
   "ui.look": "Look",
   "skin.workbench": "Workbench",
   "skin.friendly": "Friendly",
@@ -9,27 +8,22 @@
   "mode.toDark": "Use dark mode",
   "mode.toLight": "Use light mode",
   "ui.language": "Language",
-
   "unsupported": "This browser can't talk to USB devices. Open this page in Chrome or Edge on a computer.",
-
   "steps.label": "Setup progress",
   "steps.choose": "Choose board",
   "steps.connect": "Connect",
   "steps.install": "Install",
   "steps.code": "Pairing code",
-
   "choose.label": "Which board is this?",
   "board.ready": "Firmware {version}.",
   "board.planned": "Not available yet.",
   "board.notSupported": "Can't be set up from this page.",
   "board.suffixPlanned": " (planned)",
   "board.suffixNotSupported": " (not supported)",
-
   "connect.title": "Plug it in",
   "connect.cable": "Connect the board to this computer with a USB cable that carries data, not a charge-only cable. Close any other program that is talking to it.",
   "connect.boot": "Won't connect? Unplug it, hold the BOOT button, plug it back in, then let go.",
   "erase.warning": "Installing erases the board. A board that was already paired loses that pairing and gets a new code.",
-
   "btn.install": "Install Smart 3V",
   "btn.read": "Read pairing code",
   "btn.copy": "Copy code",
@@ -37,10 +31,8 @@
   "btn.csv": "Download list (CSV)",
   "btn.print": "Print labels",
   "btn.remove": "Remove",
-
   "log.summary": "Technical log",
   "bench.label": "Board status",
-
   "status.idle": "Plug in the board, then click Install Smart 3V.",
   "status.notReady": "Choose a board that can be set up here.",
   "status.download": "Downloading the firmware…",
@@ -57,19 +49,33 @@
   "status.noPort": "No board was chosen.",
   "status.failed": "Didn't work: {msg}",
   "status.boardsFailed": "Couldn't load the list of board types. Reload the page.",
-
   "err.download": "Couldn't download the firmware ({code}).",
   "err.checksum": "The downloaded firmware doesn't match its checksum. Nothing was written.",
   "err.chip": "This board has an {chip} chip, but {name} needs an {need}. Nothing was written.",
   "err.noReturn": "the board didn't come back after the restart",
-
   "confirm.install": "Erase the connected board and install Smart 3V {version} for {name}?",
   "confirm.remove": "Remove board {id} from this list?",
-
   "result.title": "Board {id} is ready",
   "result.how": "In Home Assistant, choose Add Matter device, then scan this QR code or type the number. It's saved in your list below.",
   "result.howNoQr": "In Home Assistant, choose Add Matter device, then type this number. It's saved in your list below.",
-
+  "result.next": "See what's next",
+  "next.title": "After setup: add the board and keep it up to date",
+  "next.intro": "Do steps 2 and 3 once for each Home Assistant. After that, every board you add gets updates automatically.",
+  "next.add.title": "Add the board to Home Assistant",
+  "next.add.text": "Go to Settings, Devices & services, Add device, then Add Matter device. Scan the QR code or type the 11-digit number. Keep your phone near the board and make sure your Thread border router is on.",
+  "next.addon.title": "Install the Smart 3V Updater add-on",
+  "next.addon.text": "It watches for new Smart 3V versions and offers them in Home Assistant. Newer Home Assistant versions call add-ons apps.",
+  "next.addon.button": "Add the add-on to my Home Assistant",
+  "next.addon.manual": "Or add this address yourself under Settings, Add-ons (Apps), Add-on store, the ⋮ menu, Repositories:",
+  "next.dcl.title": "Turn on test devices in the Matter Server",
+  "next.dcl.text": "Open the Matter Server add-on, go to Configuration, turn on enable_test_net_dcl, save, and restart it. Smart 3V boards are prototypes and need this setting to receive updates.",
+  "next.install.title": "Install updates when they appear",
+  "next.install.text": "New versions show up under Settings, Updates. Click Update on each board. It takes about 5 to 6 minutes, and the board must stay powered the whole time.",
+  "next.docs": "Full add-on instructions",
+  "next.limits.title": "Not using Home Assistant OS?",
+  "next.limits.text": "Add-ons need Home Assistant OS or a Supervised install. Home Assistant in Docker can control the boards but can't install the add-on, so it gets no automatic updates.",
+  "next.other.title": "Using Apple Home or Google Home?",
+  "next.other.text": "Updates only arrive through Home Assistant with the add-on. Apple Home users can also add the board to a Home Assistant, because a Matter device can belong to both at once; Home Assistant then delivers the updates. Without Home Assistant, the only way to update is to install again over USB on this page, which erases the board so it has to be added again. Google Home doesn't accept these prototype boards.",
   "list.title": "Your boards",
   "list.note": "This list is saved only in this browser. Download a copy to keep it safe, and treat pairing codes like keys.",
   "list.empty": "No boards yet. Boards you set up here appear in this list.",
@@ -78,10 +84,8 @@
   "col.firmware": "Firmware",
   "col.type": "Board type",
   "col.date": "Set up",
-
   "label.scan": "Matter: scan the code or type the number.",
   "label.type": "Matter pairing code. Type it in Home Assistant.",
-
   "footer.version": "Page version {n}",
   "footer.source": "Source on GitHub"
 }

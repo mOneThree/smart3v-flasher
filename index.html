@@ -264,6 +264,25 @@ footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color:
   td[data-label]::before { content: attr(data-label); color: var(--muted); min-width: 8.5em; font-family: var(--font); }
 }
 
+/* What's next */
+.next { margin-top: 24px; }
+.next summary { list-style: none; cursor: pointer; padding: 20px 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.next summary::-webkit-details-marker { display: none; }
+.next .chev { flex: none; width: 12px; height: 12px; border-inline-end: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s; margin-inline-end: 4px; }
+.next[open] .chev { transform: rotate(225deg); }
+.next-body { padding: 0 22px 22px; display: grid; gap: 18px; }
+.next-steps { list-style: none; margin: 0; padding: 0; counter-reset: n; display: grid; gap: 18px; }
+.next-steps li { counter-increment: n; position: relative; padding-inline-start: 44px; display: grid; gap: 6px; justify-items: start; }
+.next-steps li > * { max-width: 68ch; }
+.next-steps li::before { content: counter(n); position: absolute; inset-inline-start: 0; top: -3px; width: 30px; height: 30px; border-radius: var(--pad-shape); border: 2px solid var(--line); display: grid; place-items: center; font-weight: 600; font-size: .9rem; color: var(--muted); }
+[data-skin="workbench"] .next-steps li::before { border: 3px solid var(--copper); color: var(--ink); }
+.next-steps .btn { display: inline-block; text-decoration: none; margin-top: 4px; }
+.next-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.next-notes > div { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--accent-soft); display: grid; gap: 6px; align-content: start; font-size: .95rem; }
+code { font-family: var(--mono); font-size: .88em; background: var(--bg); border: 1px solid var(--line); padding: 1px 6px; border-radius: var(--radius-sm); word-break: break-all; }
+@media (max-width: 860px) { .next-notes { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .next summary, .next-body { padding-inline: 16px; } }
+
 /* Labels: print only */
 .labels { display: none; }
 @media print {
@@ -385,6 +404,38 @@ footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color:
     </details>
   </section>
 
+  <details class="panel next" id="next">
+    <summary><h2 data-i18n="next.title">After setup: add the board and keep it up to date</h2><span class="chev" aria-hidden="true"></span></summary>
+    <div class="next-body">
+      <p class="hint" data-i18n="next.intro">Do steps 2 and 3 once for each Home Assistant. After that, every board you add gets updates automatically.</p>
+      <ol class="next-steps">
+        <li>
+          <h3 data-i18n="next.add.title">Add the board to Home Assistant</h3>
+          <p data-i18n="next.add.text"></p>
+        </li>
+        <li>
+          <h3 data-i18n="next.addon.title">Install the Smart 3V Updater add-on</h3>
+          <p data-i18n="next.addon.text"></p>
+          <p><a class="btn" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FmOneThree%2Fsmart3v-updates" target="_blank" rel="noopener" data-i18n="next.addon.button">Add the add-on to my Home Assistant</a></p>
+          <p class="hint"><span data-i18n="next.addon.manual"></span> <code>https://github.com/mOneThree/smart3v-updates</code></p>
+        </li>
+        <li>
+          <h3 data-i18n="next.dcl.title">Turn on test devices in the Matter Server</h3>
+          <p data-i18n="next.dcl.text"></p>
+        </li>
+        <li>
+          <h3 data-i18n="next.install.title">Install updates when they appear</h3>
+          <p data-i18n="next.install.text"></p>
+          <p><a href="https://github.com/mOneThree/smart3v-updates/blob/main/smart3v_updater/DOCS.md" target="_blank" rel="noopener" data-i18n="next.docs">Full add-on instructions</a></p>
+        </li>
+      </ol>
+      <div class="next-notes">
+        <div><h3 data-i18n="next.limits.title">Not using Home Assistant OS?</h3><p data-i18n="next.limits.text"></p></div>
+        <div><h3 data-i18n="next.other.title">Using Apple Home or Google Home?</h3><p data-i18n="next.other.text"></p></div>
+      </div>
+    </div>
+  </details>
+
   <section class="panel list" aria-labelledby="listTitle">
     <div class="list-head">
       <h2 id="listTitle" data-i18n="list.title">Your boards</h2>
@@ -404,7 +455,7 @@ footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color:
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="5">Page version 5</span>
+    <span id="pageVersion" data-page-version="6">Page version 6</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -415,7 +466,7 @@ footer { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 6px 18px; color:
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 5;
+const PAGE_VERSION = 6;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";
@@ -649,7 +700,13 @@ function renderResult() {
     `<div class="code-row"><span class="code">${esc(r.code)}</span>` +
     `<button class="btn quiet small" type="button" id="copyCode">${esc(t("btn.copy"))}</button></div>` +
     (r.qr ? `<div class="qr">${qrSvg(r.qr)}</div>` : "") +
-    `<p>${esc(t(r.qr ? "result.how" : "result.howNoQr"))}</p>`;
+    `<p>${esc(t(r.qr ? "result.how" : "result.howNoQr"))}</p>` +
+    `<p><a href="#next" id="toNext">${esc(t("result.next"))}</a></p>`;
+  $("toNext").addEventListener("click", (e) => {
+    e.preventDefault();
+    $("next").open = true;
+    $("next").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  });
   $("copyCode").addEventListener("click", async (e) => {
     try { await navigator.clipboard.writeText(r.code); e.target.textContent = t("btn.copied"); } catch { /* no clipboard */ }
   });
@@ -661,6 +718,7 @@ function showResult(info, board, fwVersion) {
     remember({ id: info.id, code: info.code, qr, firmware: fwVersion || "", board: board ? board.name : "", date: today() });
     lastResult = { id: info.id, code: info.code, qr };
     renderResult();
+    $("next").open = true;
     setPhase(4, { state: "done" });
     status("status.done", "ok", { id: info.id });
   } else if (info.paired) {
