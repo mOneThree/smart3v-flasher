@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Smart 3V board setup</title>
 <meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>
   // Apply the saved look before the page paints, so it never flashes the wrong theme.
   (function () {
@@ -467,7 +470,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
   </section>
 
   <footer>
-    <span id="pageVersion" data-page-version="10">Page version 10</span>
+    <span id="pageVersion" data-page-version="11">Page version 11</span>
     <a href="https://github.com/mOneThree/smart3v-flasher" data-i18n="footer.source">Source on GitHub</a>
   </footer>
 
@@ -478,7 +481,7 @@ code { font-family: var(--mono); font-size: .88em; background: var(--bg); border
 <script type="module">
 import { ESPLoader, Transport } from "./vendor/esptool-js-0.7.1.js";
 
-const PAGE_VERSION = 10;
+const PAGE_VERSION = 11;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "smart3v.boards.v1";
 const UI_KEY = "smart3v.ui.v1";

@@ -21,6 +21,7 @@ Firmware updates for boards that are already installed come from the Home Assist
 | `lang/languages.json` | The languages the page offers |
 | `vendor/esptool-js-0.7.1.js` | Espressif's esptool-js, Apache-2.0 (licence alongside) |
 | `vendor/qrcode-generator-1.4.4.js` | QR code drawing for results and labels, MIT (Kazuhiko Arase) |
+| `favicon.svg`, `favicon.ico`, `apple-touch-icon.png` | Browser tab, bookmark and phone home-screen icons |
 | `CNAME` | The custom domain for GitHub Pages. Do not delete |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are |
 
